@@ -1,22 +1,21 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 
-# Настройки БД
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://habit_user:password@localhost/habit_tracker'
+# Настройки БД (Проверьте пароль!)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://habit_user:sudo@localhost/habit_tracker'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Модель привычки
+# Модели
 class Habit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     logs = db.relationship('HabitLog', backref='habit', cascade="all, delete-orphan", lazy=True)
 
-# Модель лога (выполнено или нет на конкретную дату)
 class HabitLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     habit_id = db.Column(db.Integer, db.ForeignKey('habit.id'), nullable=False)
@@ -26,10 +25,9 @@ class HabitLog(db.Model):
 @app.route('/')
 def index():
     today = date.today()
-    habits = Habit.query.all()
-    # Собираем данные: выполнена ли привычка сегодня
+    habits_raw = Habit.query.all()
     habit_data = []
-    for h in habits:
+    for h in habits_raw:
         log = HabitLog.query.filter_by(habit_id=h.id, date=today).first()
         habit_data.append({
             'id': h.id,
@@ -59,12 +57,12 @@ def toggle_today(habit_id):
     db.session.commit()
     return redirect(url_for('index'))
 
-# Новое: редактирование истории (за последние 7 дней)
+# ЭТА ФУНКЦИЯ ДОЛЖНА БЫТЬ В ФАЙЛЕ:
 @app.route('/history/<int:habit_id>')
 def history(habit_id):
     habit = Habit.query.get_or_404(habit_id)
-    import datetime as dt
-    days = [date.today() - dt.timedelta(days=i) for i in range(7)]
+    # Генерируем список из последних 7 дней
+    days = [date.today() - timedelta(days=i) for i in range(7)]
     history_data = []
     for d in days:
         log = HabitLog.query.filter_by(habit_id=habit_id, date=d).first()
@@ -75,7 +73,8 @@ def history(habit_id):
 def history_update(habit_id, log_date):
     target_date = datetime.strptime(log_date, '%Y-%m-%d').date()
     log = HabitLog.query.filter_by(habit_id=habit_id, date=target_date).first()
-    status = True if request.form.get('status') == 'on' else False
+    # Если чекбокс пришел в POST, значит он включен
+    status = True if request.form.get('status') else False
     
     if log:
         log.status = status
