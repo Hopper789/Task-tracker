@@ -2,65 +2,150 @@
 <html lang="ru" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Статистика</title>
-    <link href="cdn.jsdelivr.net" rel="stylesheet">
-    <script src="cdn.jsdelivr.net"></script>
+    <title>Статистика: {{ habit.name }}</title>
+    <!-- Добавьте https:// перед ссылками -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        body { 
+            background-color: #0d1117; 
+            color: #ffffff; 
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .card-graph { 
+            background-color: #010409; 
+            border: 1px solid #30363d; 
+            border-radius: 20px; 
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .list-group-item { 
+            background: transparent !important; 
+            border-color: #30363d !important; 
+            padding: 15px 0; 
+            color: white;
+        }
+        .form-check-input {
+            transform: scale(1.6);
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
-<body class="bg-dark text-light">
-<div class="container py-5">
-    <a href="/" class="btn btn-outline-light btn-sm mb-4">← К списку</a>
-    <h2 class="fw-bold mb-5 text-center">{{ habit.name }}</h2>
-
+<body>
+<div class="container">
+    <a href="/" class="btn btn-outline-light border-0 back-button">← Назад</a>
+    <h2 class="display-5 fw-bold mb-4 text-center">{{ habit.name }}</h2>
     <div class="row">
-        <!-- Гистограмма -->
-        <div class="col-md-7 mb-4">
-            <div class="card bg-black border-secondary p-4">
-                <h5 class="text-muted mb-4">Активность за 7 дней</h5>
-                <canvas id="habitChart" height="200"></canvas>
+        <div class="col-lg-7">
+            <div class="card-graph shadow">
+                <h5 class="text-secondary mb-3">Активность за 7 дней</h5>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="habitChart"></canvas>
+                </div>
             </div>
         </div>
-
-        <!-- Управление историей -->
-        <div class="col-md-5">
-            <div class="list-group">
-                {% for entry in history %}
-                <div class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center py-3">
-                    <span class="fw-lighter">{{ entry.date.strftime('%d %B') }}</span>
-                    <form action="{{ url_for('history_update', habit_id=habit.id, log_date=entry.date) }}" method="POST">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="status" 
-                                   onchange="this.form.submit()" {% if entry.status %}checked{% endif %}>
-                        </div>
-                    </form>
+        <div class="col-lg-5">
+            <div class="card-graph shadow">
+                <h5 class="text-secondary mb-3">Редактировать историю</h5>
+                <div class="list-group list-group-flush">
+                    {% for entry in history %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="fs-5 fw-lighter text-white">{{ entry.date.strftime('%d.%m.%Y') }}</span>
+                        <form action="{{ url_for('history_update', habit_id=habit.id, log_date=entry.date.strftime('%Y-%m-%d')) }}" method="POST" class="mb-0">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" name="status" 
+                                       onchange="this.form.submit()" {% if entry.status %}checked{% endif %} value="on">
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('habitChart').getContext('2d');
-    new Chart(ctx, {
+    
+    // Получаем данные из шаблона
+    const labels = JSON.parse('{{ labels|safe }}');
+    const values = JSON.parse('{{ values|safe }}');
+    
+    console.log('Labels:', labels);
+    console.log('Values:', values);
+    
+    // Создаем градиент для столбцов
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, '#39d353');
+    gradient.addColorStop(1, '#238636');
+    
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: {{ labels|safe }},
+            labels: labels,
             datasets: [{
                 label: 'Выполнено',
-                data: {{ values|safe }},
-                backgroundColor: '#238636',
+                data: values,
+                backgroundColor: gradient,
+                borderColor: '#39d353',
+                borderWidth: 1,
                 borderRadius: 8,
-                barThickness: 30
+                hoverBackgroundColor: '#2ea043'
             }]
         },
         options: {
-            scales: {
-                y: { beginAtZero: true, max: 1, ticks: { display: false }, grid: { display: false } },
-                x: { grid: { display: false } }
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y === 1 ? 'Выполнено' : 'Не выполнено';
+                        }
+                    }
+                }
             },
-            plugins: { legend: { display: false } }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 1.2,
+                    ticks: {
+                        stepSize: 1,
+                        color: '#8b949e',
+                        callback: function(value) {
+                            if (value === 1) return 'Да';
+                            if (value === 0) return 'Нет';
+                            return '';
+                        }
+                    },
+                    grid: {
+                        color: '#30363d'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#8b949e'
+                    },
+                    grid: {
+                        color: '#30363d'
+                    }
+                }
+            }
         }
     });
+});
 </script>
+
+<!-- Bootstrap JS (опционально) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
