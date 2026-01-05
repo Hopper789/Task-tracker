@@ -2,41 +2,49 @@
 <html lang="ru" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Трекер 2026</title>
-    <!-- Исправленные ссылки CDN -->
+    <title>Habits 2026</title>
     <link href="cdn.jsdelivr.net" rel="stylesheet">
-    <link href="fonts.googleapis.com" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0b0e14; color: #e9ecef; }
-        .habit-name { font-size: 1.8rem; font-weight: 700; color: #fff; }
-        .card { background-color: #1a1d23; border: 1px solid #2d323b; border-radius: 20px; transition: 0.3s; }
-        .card:hover { border-color: #0d6efd; }
-        .text-gradient { background: linear-gradient(45deg, #0d6efd, #0dcaf0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        body { background-color: #0b0e14; color: #f8f9fa; letter-spacing: 0.5px; }
+        .habit-name { font-size: 1.8rem; font-weight: 300; color: #ffffff; margin-bottom: 15px; }
+        .card { background-color: #161b22; border: 1px solid #30363d; border-radius: 24px; padding: 20px; margin-bottom: 30px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .dot-done { background-color: #238636; box-shadow: 0 0 8px #238636; }
+        .dot-empty { background-color: #30363d; }
+        .spacing-large { margin-right: 40px; }
     </style>
 </head>
 <body>
 <div class="container py-5">
-    <h1 class="text-center mb-5 display-4 fw-bold text-gradient">Привычки 2026</h1>
+    <h1 class="text-center mb-5 fw-lighter display-3">Мой Прогресс</h1>
     
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
-            <form action="/add" method="POST" class="input-group input-group-lg mb-5 shadow">
-                <input type="text" name="name" class="form-control border-0 px-4" placeholder="Новая привычка..." required>
-                <button class="btn btn-primary px-5" type="submit">Создать</button>
+        <div class="col-lg-8">
+            <form action="/add" method="POST" class="mb-5">
+                <div class="input-group input-group-lg shadow">
+                    <input type="text" name="name" class="form-control border-0 bg-dark text-white px-4" placeholder="Что планируем?">
+                    <button class="btn btn-primary px-5">Добавить</button>
+                </div>
             </form>
 
             {% for habit in habits %}
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body d-flex align-items-center justify-content-between p-4">
+            <div class="card shadow-sm">
+                <div class="d-flex align-items-center justify-content-between">
                     <div class="flex-grow-1">
-                        <div class="habit-name mb-1">{{ habit.name }}</div>
-                        <a href="{{ url_for('history', habit_id=habit.id) }}" class="btn btn-sm btn-outline-info border-0 p-0 text-decoration-none">
-                            📊 Просмотреть историю
-                        </a>
+                        <div class="d-flex align-items-center">
+                            <span class="habit-name spacing-large">{{ habit.name }}</span>
+                            <!-- Мини-история -->
+                            <div class="mini-dots mt-1">
+                                {% for day_status in habit.mini_history %}
+                                    <span class="dot {% if day_status %}dot-done{% else %}dot-empty{% endif %}" title="История за последние дни"></span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('history', habit_id=habit.id) }}" class="text-info text-decoration-none fw-lighter">Открыть детальную статистику →</a>
                     </div>
                     <a href="{{ url_for('toggle_today', habit_id=habit.id) }}" 
-                       class="btn btn-lg px-4 rounded-pill {% if habit.done_today %}btn-success{% else %}btn-outline-primary{% endif %}">
-                        {% if habit.done_today %}✓ Выполнено{% else %}Сделать сегодня{% endif %}
+                       class="btn btn-lg rounded-pill px-4 {% if habit.done_today %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                        {% if habit.done_today %}✓ Завершено{% else %}Выполнить{% endif %}
                     </a>
                 </div>
             </div>
