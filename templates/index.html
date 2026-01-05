@@ -1,16 +1,49 @@
 <!DOCTYPE html>
-<html>
-<head><title>Habit Tracker</title></head>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер привычек 2026</title>
+    <!-- Подключаем Bootstrap 5 -->
+    <link href="cdn.jsdelivr.net" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .habit-card { transition: transform 0.2s; border-left: 5px solid #0d6efd; }
+        .habit-card:hover { transform: scale(1.01); }
+    </style>
+</head>
 <body>
-    <h1>Мои привычки</h1>
-    <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="Новая привычка" required>
-        <button type="submit">Добавить</button>
-    </form>
-    <ul>
-        {% for habit in habits %}
-            <li>{{ habit.name }} (от {{ habit.created_at.strftime('%Y-%m-%d') }})</li>
-        {% endfor %}
-    </ul>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="text-center mb-4 fw-bold text-primary">Трекер привычек</h1>
+                
+                <!-- Форма добавления -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <form action="/add" method="POST" class="d-flex gap-2">
+                            <input type="text" name="name" class="form-control" placeholder="Напр: Медитация 10 мин" required>
+                            <button type="submit" class="btn btn-primary px-4">Добавить</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Список привычек -->
+                <div class="list-group shadow-sm">
+                    {% for habit in habits %}
+                    <div class="list-group-item habit-card d-flex justify-content-between align-items-center mb-2 bg-white rounded shadow-sm">
+                        <div>
+                            <h5 class="mb-0 fw-semibold">{{ habit.name }}</h5>
+                            <small class="text-muted">Начато: {{ habit.created_at.strftime('%d.%m.%Y') }}</small>
+                        </div>
+                        <span class="badge bg-success rounded-pill">В процессе</span>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted mt-4">Привычек пока нет. Самое время начать!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
