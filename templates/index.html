@@ -3,174 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <title>Habit Tracker 2026</title>
-    <!-- Исправьте ссылку на Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #39d353;
+            --secondary-color: #238636;
+            --bg-dark: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-light: #f0f6fc;
+            --text-muted: #8b949e;
+        }
+        
         body { 
-            background-color: #0b0e14; 
-            color: #f0f0f0; 
-            letter-spacing: 0.5px;
+            background-color: var(--bg-dark); 
+            color: var(--text-light);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            padding-top: 40px;
+            padding-top: 30px;
+            padding-bottom: 50px;
         }
-        .habit-name { 
-            font-size: 1.8rem; 
-            font-weight: 300; 
-            color: #ffffff; 
-            margin-bottom: 10px;
-        }
-        .card { 
-            background-color: #161b22; 
-            border: 1px solid #30363d; 
+        
+        .habit-card { 
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color); 
             border-radius: 20px; 
             padding: 25px; 
-            margin-bottom: 25px; 
+            margin-bottom: 25px;
             transition: all 0.3s ease;
-        }
-        .card:hover { 
-            border-color: #39d353;
-            box-shadow: 0 0 15px rgba(57, 211, 83, 0.2);
-            transform: translateY(-2px);
-        }
-        .dot { 
-            width: 16px; 
-            height: 16px; 
-            border-radius: 50%; 
-            display: inline-block; 
-            margin-right: 10px;
-            transition: all 0.3s ease;
-        }
-        .dot-done { 
-            background-color: #39d353; 
-            box-shadow: 0 0 12px rgba(57, 211, 83, 0.6);
-        }
-        .dot-empty { 
-            background-color: #21262d; 
-            border: 2px solid #30363d;
-        }
-        .btn-success { 
-            background-color: #238636; 
-            border: none;
-            font-weight: 500;
-            padding: 10px 25px;
-            border-radius: 50px;
-        }
-        .btn-success:hover {
-            background-color: #2ea043;
-            transform: scale(1.05);
-        }
-        .btn-outline-secondary {
-            border: 2px solid #30363d;
-            color: #8b949e;
-            padding: 10px 25px;
-            border-radius: 50px;
-        }
-        .btn-outline-secondary:hover {
-            border-color: #39d353;
-            color: #39d353;
-            background-color: transparent;
-        }
-        .text-silver { 
-            color: #d1d1d1 !important; 
-            font-weight: 300; 
-            text-decoration: none;
-            border-bottom: 1px solid #333;
-            transition: all 0.3s ease;
-            padding-bottom: 2px;
-        }
-        .text-silver:hover {
-            color: #39d353 !important;
-            border-bottom-color: #39d353;
-        }
-        .mini-dots {
-            margin-top: 10px;
-        }
-        .form-control {
-            background-color: #0d1117;
-            border: 2px solid #30363d;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 50px;
-        }
-        .form-control:focus {
-            background-color: #0d1117;
-            border-color: #39d353;
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(57, 211, 83, 0.25);
-        }
-        .input-group {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            border-radius: 50px;
+            position: relative;
             overflow: hidden;
         }
-        .btn-primary {
-            background-color: #1f6feb;
+        
+        .habit-card:hover { 
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(57, 211, 83, 0.15);
+            transform: translateY(-3px);
+        }
+        
+        .habit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            border-radius: 20px 0 0 20px;
+        }
+        
+        .habit-name { 
+            font-size: 1.8rem; 
+            font-weight: 600; 
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+        
+        .streak-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(238, 90, 82, 0.3);
+        }
+        
+        .streak-badge .bi-fire {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .history-dots {
+            display: flex;
+            gap: 6px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .dot { 
+            width: 20px; 
+            height: 20px; 
+            border-radius: 6px; 
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .dot-done { 
+            background-color: var(--primary-color); 
+            box-shadow: 0 0 15px rgba(57, 211, 83, 0.5);
+        }
+        
+        .dot-empty { 
+            background-color: var(--border-color);
+        }
+        
+        .dot:hover {
+            transform: scale(1.3);
+            z-index: 1;
+        }
+        
+        .dot[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            z-index: 1000;
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress {
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .toggle-btn {
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .toggle-btn.done {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .toggle-btn.not-done {
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-muted);
+        }
+        
+        .toggle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(57, 211, 83, 0.2);
+        }
+        
+        .stats-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+        }
+        
+        .stats-link:hover {
+            color: white;
+            gap: 12px;
+        }
+        
+        .add-form {
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .form-control {
+            background-color: rgba(13, 17, 23, 0.7);
+            border: 2px solid var(--border-color);
+            color: var(--text-light);
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+        }
+        
+        .form-control:focus {
+            background-color: rgba(13, 17, 23, 0.9);
+            border-color: var(--primary-color);
+            color: var(--text-light);
+            box-shadow: 0 0 0 0.25rem rgba(57, 211, 83, 0.25);
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #1f6feb, #2b7deb);
             border: none;
             padding: 15px 40px;
-            border-radius: 0 50px 50px 0;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
         }
-        .btn-primary:hover {
-            background-color: #2b7deb;
+        
+        .btn-add:hover {
+            background: linear-gradient(135deg, #2b7deb, #3d8dee);
+            transform: scale(1.02);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        }
+        
+        .date-info {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .summary-card {
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .summary-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .day-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .history-title {
+            font-size: 1rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
 <div class="container py-4">
-    <h1 class="text-center mb-5 fw-light display-3 text-white">Трекер Привычек</h1>
-    <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-8">
-            <form action="/add" method="POST" class="mb-5">
-                <div class="input-group input-group-lg shadow-lg">
-                    <input type="text" name="name" class="form-control border-0" 
-                           placeholder="Добавить новую привычку..." required>
-                    <button class="btn btn-primary">Добавить</button>
+    <div class="page-title">
+        <h1 class="display-4 fw-bold text-white">🚀 Трекер Привычек</h1>
+        <p class="lead text-muted">Формируйте полезные привычки каждый день</p>
+    </div>
+    
+    <div class="date-info">
+        <i class="bi bi-calendar-check"></i> Сегодня: {{ today.strftime('%d %B %Y') }}
+    </div>
+    
+    <!-- Форма добавления привычки -->
+    <div class="add-form shadow-lg">
+        <form action="/add" method="POST" class="row g-3 align-items-center">
+            <div class="col-lg-10">
+                <input type="text" name="name" class="form-control" 
+                       placeholder="Введите название новой привычки (например: Утренняя зарядка)" required>
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-add w-100">
+                    <i class="bi bi-plus-circle"></i> Добавить
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Сводная статистика -->
+    {% if habits %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-title">Всего привычек</div>
+                <div class="summary-value">{{ total_habits }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-title">Выполнено сегодня</div>
+                <div class="summary-value">{{ completed_today }}/{{ total_habits }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-title">Средний прогресс</div>
+                <div class="summary-value">
+                    {% if habits %}
+                        {{ (habits|map(attribute='progress_percentage')|sum / habits|length)|int }}%
+                    {% else %}
+                        0%
+                    {% endif %}
                 </div>
-            </form>
-            
-            {% if habits %}
-                {% for habit in habits %}
-                <div class="card shadow-lg">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap">
-                        <div class="flex-grow-1 mb-3 mb-md-0">
-                            <div class="mb-3">
-                                <span class="habit-name">{{ habit.name }}</span>
-                            </div>
-                            
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="mini-dots">
-                                    {% for day_status in habit.mini_history %}
-                                        <span class="dot {% if day_status %}dot-done{% else %}dot-empty{% endif %}" 
-                                              title="День {{ loop.index }}: {% if day_status %}Выполнено{% else %}Не выполнено{% endif %}"></span>
-                                    {% endfor %}
-                                </div>
-                                <small class="text-muted ms-3">Последние 5 дней</small>
-                            </div>
-                            
-                            <div>
-                                <a href="{{ url_for('history', habit_id=habit.id) }}" class="text-silver">
-                                    📊 Подробная статистика →
-                                </a>
-                            </div>
-                        </div>
-                        
-                        <a href="{{ url_for('toggle_today', habit_id=habit.id) }}" 
-                           class="btn btn-lg {% if habit.done_today %}btn-success{% else %}btn-outline-secondary{% endif %}">
-                            {% if habit.done_today %}✓ Выполнено сегодня{% else %}Отметить выполнение{% endif %}
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="card text-center py-5">
-                    <h3 class="text-muted mb-3">Нет привычек</h3>
-                    <p class="text-muted">Добавьте первую привычку, используя форму выше</p>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
+    {% endif %}
+    
+    <!-- Список привычек -->
+    {% if habits %}
+        {% for habit in habits %}
+        <div class="habit-card shadow-lg">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <!-- Название и счетчик серии -->
+                    <div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+                        <h3 class="habit-name mb-0">{{ habit.name }}</h3>
+                        {% if habit.current_streak > 0 %}
+                        <div class="streak-badge">
+                            <i class="bi bi-fire"></i> Серия: {{ habit.current_streak }} {{ russian_plural_days(habit.current_streak) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Прогресс за 2 недели -->
+                    <div class="progress-container">
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Прогресс за 2 недели</small>
+                            <small class="text-muted">{{ habit.completed_last_14 }}/{{ habit.total_last_14 }} дней</small>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: {{ habit.progress_percentage }}%;"></div>
+                        </div>
+                        <div class="progress-text">
+                            {{ habit.progress_percentage }}% выполнения
+                        </div>
+                    </div>
+                    
+                    <!-- История за 14 дней -->
+                    <div class="history-header">
+                        <div class="history-title">История за 14 дней:</div>
+                        <div class="history-title">{{ habit.completed_last_14 }}/14 выполнено</div>
+                    </div>
+                    <div class="history-dots">
+                        {% for day_status in habit.two_week_history %}
+                            <div class="dot {% if day_status %}dot-done{% else %}dot-empty{% endif %}" 
+                                 title="День {{ loop.index }}: {% if day_status %}✓ Выполнено{% else %}✗ Не выполнено{% endif %}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Ссылка на детальную статистику -->
+                    <a href="{{ url_for('history', habit_id=habit.id) }}" class="stats-link">
+                        <i class="bi bi-graph-up"></i> Подробная статистика
+                    </a>
+                </div>
+                
+                <div class="col-lg-5 text-lg-end">
+                    <!-- Кнопка отметки выполнения -->
+                    <a href="{{ url_for('toggle_today', habit_id=habit.id) }}" 
+                       class="toggle-btn {% if habit.done_today %}done{% else %}not-done{% endif %}">
+                        {% if habit.done_today %}
+                            <i class="bi bi-check-circle"></i> Выполнено сегодня
+                        {% else %}
+                            <i class="bi bi-circle"></i> Отметить выполнение
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Форма удаления -->
+                    <form action="{{ url_for('delete_habit', habit_id=habit.id) }}" method="POST" class="mt-3">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                onclick="return confirm('Удалить привычку «{{ habit.name }}»?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <!-- Состояние при отсутствии привычек -->
+        <div class="empty-state">
+            <i class="bi bi-calendar-heart"></i>
+            <h3>У вас пока нет привычек</h3>
+            <p class="text-muted">Добавьте первую привычку, чтобы начать отслеживание</p>
+        </div>
+    {% endif %}
 </div>
 
-<!-- Bootstrap JS (для некоторых компонентов) -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Простые всплывающие подсказки
+document.addEventListener('DOMContentLoaded', function() {
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach(dot => {
+        dot.addEventListener('mouseenter', function(e) {
+            const title = this.getAttribute('title');
+            if (title) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'custom-tooltip';
+                tooltip.textContent = title;
+                tooltip.style.position = 'absolute';
+                tooltip.style.background = 'rgba(0, 0, 0, 0.9)';
+                tooltip.style.color = 'white';
+                tooltip.style.padding = '5px 10px';
+                tooltip.style.borderRadius = '5px';
+                tooltip.style.fontSize = '12px';
+                tooltip.style.zIndex = '1000';
+                tooltip.style.top = (e.target.offsetTop - 30) + 'px';
+                tooltip.style.left = (e.target.offsetLeft + e.target.offsetWidth/2 - 50) + 'px';
+                tooltip.style.width = '100px';
+                tooltip.style.textAlign = 'center';
+                
+                document.body.appendChild(tooltip);
+                this._tooltip = tooltip;
+            }
+        });
+        
+        dot.addEventListener('mouseleave', function() {
+            if (this._tooltip) {
+                document.body.removeChild(this._tooltip);
+                this._tooltip = null;
+            }
+        });
+    });
+});
+</script>
 </body>
 </html>

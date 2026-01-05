@@ -3,66 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <title>Статистика: {{ habit.name }}</title>
-    <!-- Добавьте https:// перед ссылками -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-color: #39d353;
+            --secondary-color: #238636;
+            --bg-dark: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-light: #f0f6fc;
+            --text-muted: #8b949e;
+        }
+        
         body { 
-            background-color: #0d1117; 
-            color: #ffffff; 
+            background-color: var(--bg-dark); 
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             padding-top: 20px;
             padding-bottom: 20px;
         }
-        .card-graph { 
-            background-color: #010409; 
-            border: 1px solid #30363d; 
-            border-radius: 20px; 
-            padding: 20px;
-            margin-bottom: 20px;
+        
+        .stats-header {
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
         }
-        .list-group-item { 
-            background: transparent !important; 
-            border-color: #30363d !important; 
-            padding: 15px 0; 
+        
+        .habit-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary-color), #58a6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .streak-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
             color: white;
-        }
-        .form-check-input {
-            transform: scale(1.6);
-        }
-        .back-button {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
             margin-bottom: 20px;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .view-toggle .btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .view-toggle .btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-color: transparent;
+        }
+        
+        .card-graph { 
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color); 
+            border-radius: 20px; 
+            padding: 25px;
+            margin-bottom: 30px;
+            min-height: 400px;
+        }
+        
+        .chart-title {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .history-list { 
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color); 
+            border-radius: 20px; 
+            padding: 25px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .history-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .history-list::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-item:hover {
+            background: rgba(57, 211, 83, 0.05);
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 10px;
+        }
+        
+        .history-date {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .date-main {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .date-day {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .form-switch {
+            padding-left: 3.5em;
+        }
+        
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            background-color: var(--border-color);
+            border-color: var(--border-color);
+        }
+        
+        .form-switch .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-switch .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(57, 211, 83, 0.25);
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-light);
+            padding: 10px 20px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateX(-5px);
+        }
+        
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(57, 211, 83, 0.1);
+            border: 1px solid rgba(57, 211, 83, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: var(--text-muted);
+        }
+        
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <a href="/" class="btn btn-outline-light border-0 back-button">← Назад</a>
-    <h2 class="display-5 fw-bold mb-4 text-center">{{ habit.name }}</h2>
-    <div class="row">
-        <div class="col-lg-7">
-            <div class="card-graph shadow">
-                <h5 class="text-secondary mb-3">Активность за 7 дней</h5>
-                <div style="height: 300px; position: relative;">
+<div class="container py-4">
+    <!-- Кнопка назад -->
+    <a href="/" class="back-btn">
+        <i class="bi bi-arrow-left"></i> Назад к привычкам
+    </a>
+    
+    <!-- Заголовок и статистика -->
+    <div class="stats-header shadow-lg">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="habit-title">{{ habit.name }}</h1>
+                {% if current_streak > 0 %}
+                <div class="streak-display">
+                    <i class="bi bi-fire"></i>
+                    <span>Текущая серия: {{ current_streak }} {{ russian_plural_days(current_streak) }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="view-toggle">
+                <a href="{{ url_for('history', habit_id=habit.id, view='2weeks') }}" 
+                   class="btn btn-outline-secondary {% if view == '2weeks' %}active{% endif %}">
+                    <i class="bi bi-calendar-week"></i> 2 недели
+                </a>
+                <a href="{{ url_for('history', habit_id=habit.id, view='8weeks') }}" 
+                   class="btn btn-outline-secondary {% if view == '8weeks' %}active{% endif %}">
+                    <i class="bi bi-bar-chart"></i> 8 недель
+                </a>
+            </div>
+        </div>
+        
+        <!-- Сводная статистика -->
+        <div class="stats-summary">
+            {% set completed_total = history|selectattr('status')|list|length %}
+            {% set total_days = history|length %}
+            {% set percentage = (completed_total / total_days * 100)|int if total_days > 0 else 0 %}
+            
+            <div class="stat-box">
+                <div class="stat-value">{{ percentage }}%</div>
+                <div class="stat-label">Общий прогресс</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ completed_total }}</div>
+                <div class="stat-label">Выполнено дней</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ total_days - completed_total }}</div>
+                <div class="stat-label">Пропущено дней</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ current_streak }}</div>
+                <div class="stat-label">Текущая серия</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- График -->
+        <div class="col-lg-8">
+            <div class="card-graph shadow-lg">
+                <h5 class="chart-title">{{ chart_title }}</h5>
+                <div style="height: 350px; position: relative;">
                     <canvas id="habitChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-lg-5">
-            <div class="card-graph shadow">
-                <h5 class="text-secondary mb-3">Редактировать историю</h5>
-                <div class="list-group list-group-flush">
-                    {% for entry in history %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="fs-5 fw-lighter text-white">{{ entry.date.strftime('%d.%m.%Y') }}</span>
-                        <form action="{{ url_for('history_update', habit_id=habit.id, log_date=entry.date.strftime('%Y-%m-%d')) }}" method="POST" class="mb-0">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" name="status" 
-                                       onchange="this.form.submit()" {% if entry.status %}checked{% endif %} value="on">
-                            </div>
-                        </form>
+        
+        <!-- История для редактирования -->
+        <div class="col-lg-4">
+            <div class="history-list shadow-lg">
+                <h5 class="chart-title mb-4">
+                    <i class="bi bi-pencil-square"></i> Редактировать историю
+                </h5>
+                {% for entry in history %}
+                <div class="history-item">
+                    <div class="history-date">
+                        <span class="date-main">{{ entry.date.strftime('%d.%m.%Y') }}</span>
+                        <span class="date-day">{{ entry.day_name }}</span>
                     </div>
-                    {% endfor %}
+                    <form action="{{ url_for('history_update', habit_id=habit.id, log_date=entry.date_str) }}" 
+                          method="POST" class="mb-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="status" 
+                                   onchange="this.form.submit()" {% if entry.status %}checked{% endif %} value="on">
+                        </div>
+                    </form>
                 </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -75,36 +337,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Получаем данные из шаблона
     const labels = JSON.parse('{{ labels|safe }}');
     const values = JSON.parse('{{ values|safe }}');
+    const view = '{{ view }}';
     
-    console.log('Labels:', labels);
-    console.log('Values:', values);
+    // Настройка градиента
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(57, 211, 83, 0.8)');
+    gradient.addColorStop(1, 'rgba(35, 134, 54, 0.3)');
     
-    // Создаем градиент для столбцов
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, '#39d353');
-    gradient.addColorStop(1, '#238636');
+    // Настройки графика в зависимости от вида
+    let chartType, chartOptions, datasetConfig;
     
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Выполнено',
-                data: values,
-                backgroundColor: gradient,
-                borderColor: '#39d353',
-                borderWidth: 1,
-                borderRadius: 8,
-                hoverBackgroundColor: '#2ea043'
-            }]
-        },
-        options: {
+    if (view === '2weeks') {
+        // График за 2 недели (столбчатый с днями)
+        chartType = 'bar';
+        chartOptions = {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -127,25 +377,94 @@ document.addEventListener('DOMContentLoaded', function() {
                             return '';
                         }
                     },
-                    grid: {
-                        color: '#30363d'
+                    grid: { color: '#30363d' }
+                },
+                x: {
+                    ticks: { color: '#8b949e' },
+                    grid: { color: '#30363d' }
+                }
+            }
+        };
+        
+        datasetConfig = {
+            label: 'Выполнение',
+            data: values,
+            backgroundColor: values.map(v => v === 1 ? gradient : 'rgba(48, 54, 61, 0.5)'),
+            borderColor: values.map(v => v === 1 ? '#39d353' : '#30363d'),
+            borderWidth: 1,
+            borderRadius: 8,
+            hoverBackgroundColor: values.map(v => v === 1 ? '#2ea043' : '#424951')
+        };
+    } else {
+        // График за 8 недель (линейный с точками)
+        chartType = 'line';
+        chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Выполнено: ${context.parsed.y} дней`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 7,
+                    ticks: {
+                        stepSize: 1,
+                        color: '#8b949e'
+                    },
+                    grid: { color: '#30363d' },
+                    title: {
+                        display: true,
+                        text: 'Количество дней',
+                        color: '#8b949e'
                     }
                 },
                 x: {
-                    ticks: {
+                    ticks: { color: '#8b949e' },
+                    grid: { color: '#30363d' },
+                    title: {
+                        display: true,
+                        text: 'Недели',
                         color: '#8b949e'
-                    },
-                    grid: {
-                        color: '#30363d'
                     }
                 }
             }
-        }
+        };
+        
+        datasetConfig = {
+            label: 'Выполнено дней в неделю',
+            data: values,
+            backgroundColor: gradient,
+            borderColor: '#39d353',
+            borderWidth: 3,
+            pointBackgroundColor: '#39d353',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            fill: true,
+            tension: 0.3
+        };
+    }
+    
+    // Создаем график
+    const chart = new Chart(ctx, {
+        type: chartType,
+        data: {
+            labels: labels,
+            datasets: [datasetConfig]
+        },
+        options: chartOptions
     });
 });
 </script>
-
-<!-- Bootstrap JS (опционально) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
