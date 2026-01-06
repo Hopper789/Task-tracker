@@ -79,7 +79,7 @@ jobs:
     - name: Run all tests
       continue-on-error: true
       run: |
-        python -m pytest test_app.py -v --tb=short
+        python -m pytest test_app.py -v
     
     - name: Basic functionality check
       run: |
