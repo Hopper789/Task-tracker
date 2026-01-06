@@ -48,12 +48,15 @@ jobs:
         # pip install -r requirements.txt
         pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 psycopg2-binary==2.9.9 pytest
     
-    - name: Create test database user
+    - name: Setup test database
       run: |
+        # Удаляем БД если она существует, затем создаем заново
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS habit_tracker_test;"
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "DROP USER IF EXISTS habit_user;"
         PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE USER habit_user WITH PASSWORD 'sudo';"
         PGPASSWORD=postgres psql -h localhost -U postgres -c "ALTER USER habit_user CREATEDB;"
         PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE habit_tracker_test OWNER habit_user;"
-    
+        
     - name: Run tests
       env:
         DATABASE_URL: postgresql://habit_user:sudo@localhost:5432/habit_tracker_test
