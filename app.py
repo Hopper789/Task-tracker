@@ -8,12 +8,13 @@ from sqlalchemy import func
 import logging
 from logging.handlers import RotatingFileHandler
 
+from config import config
+
 app = Flask(__name__)
 
-# Используйте правильную строку подключения
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://habit_user:sudo@localhost:5432/habit_tracker'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dev-secret-key-123'
+# Определяем окружение
+env = os.environ.get('FLASK_ENV', 'default')
+app.config.from_object(config[env])
 
 db = SQLAlchemy(app)
 

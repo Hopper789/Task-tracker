@@ -1,124 +1,4 @@
-# name: CI/CD Pipeline
-
-# on:
-#   push:
-#     branches: [ main, develop ]
-#   pull_request:
-#     branches: [ main ]
-
-# jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         python-version: ['3.14']
-
-#     services:
-#       postgres:
-#         image: postgres:18
-#         env:
-#           POSTGRES_PASSWORD: postgres
-#           POSTGRES_DB: habit_tracker_test
-#         options: >-
-#           --health-cmd pg_isready
-#           --health-interval 10s
-#           --health-timeout 5s
-#           --health-retries 5
-#         ports:
-#           - 5432:5432
-
-#     steps:
-#     - uses: actions/checkout@v4
-    
-#     - name: Set up Python ${{ matrix.python-version }}
-#       uses: actions/setup-python@v4
-#       with:
-#         python-version: ${{ matrix.python-version }}
-    
-#     - name: Install system dependencies
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y libpq-dev gcc
-    
-#     - name: Cache pip packages
-#       uses: actions/cache@v3
-#       with:
-#         path: ~/.cache/pip
-#         key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
-#         restore-keys: |
-#           ${{ runner.os }}-pip-
-    
-#     - name: Install dependencies
-#       run: |
-#         python -m pip install --upgrade pip
-#         pip install -r requirements.txt
-
-#         # pip install pytest pytest-cov flake8 black isort mypy
-    
-#     - name: Check code formatting with black
-#       run: |
-#         black --check --diff app.py test_app.py templates/
-    
-#     - name: Check imports sorting with isort
-#       run: |
-#         isort --check-only --diff app.py test_app.py
-    
-#     - name: Lint with flake8
-#       run: |
-#         flake8 app.py test_app.py --max-line-length=88 --extend-ignore=E203,W503
-    
-#     - name: Type checking with mypy
-#       run: |
-#         mypy app.py --ignore-missing-imports
-    
-#     - name: Run tests with pytest
-#       env:
-#         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/habit_tracker_test
-#       run: |
-#         python -m pytest test_app.py -v --cov=app --cov-report=xml --cov-report=term-missing
-    
-#     - name: Upload coverage to Codecov
-#       uses: codecov/codecov-action@v3
-#       with:
-#         file: ./coverage.xml
-#         flags: unittests
-    
-#     - name: Security scan with Bandit
-#       run: |
-#         pip install bandit
-#         bandit -r app.py -f json -o bandit-report.json || true
-    
-#     - name: Check for dependencies vulnerabilities
-#       run: |
-#         pip install safety
-#         safety check -r requirements.txt --output json || true
-
-#   deploy:
-#     needs: test
-#     runs-on: ubuntu-latest
-#     if: github.ref == 'refs/heads/main'
-    
-#     steps:
-#     - uses: actions/checkout@v4
-    
-#     - name: Set up Python
-#       uses: actions/setup-python@v4
-#       with:
-#         python-version: '3.11'
-    
-#     - name: Install dependencies
-#       run: |
-#         pip install --upgrade pip
-#         pip install -r requirements.txt
-    
-#     - name: Deploy to Heroku (example)
-#       env:
-#         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-#         HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-#       run: |
-#         git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git
-#         git push heroku main -f
-
+name: Python CI
 
 on:
   push:
@@ -129,22 +9,53 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        python-version: ['3.14']
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: habit_tracker_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: ${{ matrix.python-version }}
     
-    - name: Install dependencies
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev gcc postgresql-client
+    
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest
+        pip install pytest pytest-cov
+    
+    - name: Create test database user
+      run: |
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE USER habit_user WITH PASSWORD 'sudo';"
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "ALTER USER habit_user CREATEDB;"
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE habit_tracker_test OWNER habit_user;"
     
     - name: Run tests
+      env:
+        DATABASE_URL: postgresql://habit_user:sudo@localhost:5432/habit_tracker_test
       run: |
         python -m pytest test_app.py -v
