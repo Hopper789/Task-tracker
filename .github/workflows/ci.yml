@@ -70,8 +70,7 @@ jobs:
         "
         
         # Запускаем простые тесты
-        python -m pytest test_app.py::test_calculate_streak_simple -v
-        python -m pytest test_app.py::test_app_setup -v 2>/dev/null || true
+        python -m pytest test_app.py -v
     
     - name: Check syntax
       run: |
