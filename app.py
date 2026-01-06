@@ -34,36 +34,36 @@ class HabitLog(db.Model):
 def calculate_streak(habit_id):
     """Рассчитывает текущую серию непрерывного выполнения привычки"""
     today = date.today()
-    streak = 0
     
-    # Получаем все записи, отсортированные по дате (от новых к старым)
+    # Получаем все выполненные записи, отсортированные по дате (от новых к старым)
     logs = HabitLog.query.filter_by(habit_id=habit_id, status=True)\
                          .order_by(HabitLog.date.desc())\
                          .all()
     
-    # Проверяем последовательные дни
-    check_date = today
+    if not logs:
+        return 0
+    
+    # Определяем, с какой даты начинать считать
+    if logs[0].date == today:
+        # Сегодня выполнено - считаем от сегодня
+        start_date = today
+    elif logs[0].date == today - timedelta(days=1):
+        # Вчера выполнено (сегодня нет) - считаем от вчера
+        start_date = today - timedelta(days=1)
+    else:
+        # Последнее выполнение было больше дня назад - нет текущей серии
+        return 0
+    
+    # Считаем непрерывные дни
+    streak = 0
+    current_date = start_date
+    
     for log in logs:
-        if log.date == check_date:
+        if log.date == current_date:
             streak += 1
-            check_date -= timedelta(days=1)
+            current_date -= timedelta(days=1)
         else:
             break
-    
-    # Проверяем вчерашний день (если сегодня еще не отмечен)
-    if streak == 0:
-        yesterday = today - timedelta(days=1)
-        yesterday_log = HabitLog.query.filter_by(habit_id=habit_id, date=yesterday, status=True).first()
-        if yesterday_log:
-            # Начинаем считать с вчерашнего дня
-            check_date = yesterday
-            streak = 1
-            for log in logs:
-                if log.date == check_date:
-                    streak += 1
-                    check_date -= timedelta(days=1)
-                else:
-                    break
     
     return streak
 
