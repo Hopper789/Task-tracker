@@ -22,7 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 pytest==7.4.3
+        pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 pytest==7.4.3 psycopg2
     
     - name: Clean up old config files
       run: |
