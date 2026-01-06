@@ -1,10 +1,12 @@
 import os
 import json
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from collections import defaultdict
 from sqlalchemy import func
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 
@@ -15,12 +17,26 @@ app.config['SECRET_KEY'] = 'dev-secret-key-123'
 
 db = SQLAlchemy(app)
 
+# Настройка логирования
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+
+file_handler = RotatingFileHandler('logs/habit_tracker.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('Habit Tracker startup')
+
 # Модели базы данных
 class Habit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     logs = db.relationship('HabitLog', backref='habit', cascade="all, delete-orphan", lazy=True)
+    activity_logs = db.relationship('ActivityLog', backref='habit', cascade="all, delete-orphan", lazy=True)
 
 class HabitLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -30,6 +46,38 @@ class HabitLog(db.Model):
 
     # Уникальный индекс для предотвращения дубликатов
     __table_args__ = (db.UniqueConstraint('habit_id', 'date', name='unique_habit_date'),)
+
+class ActivityLog(db.Model):
+    """Модель для логирования действий пользователя"""
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    habit_id = db.Column(db.Integer, db.ForeignKey('habit.id'), nullable=True)
+    action = db.Column(db.String(100), nullable=False)  # create, update, delete, toggle, etc.
+    details = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+
+# Вспомогательная функция для логирования
+def log_activity(action, habit_id=None, details=None, request=None):
+    """Логирует действие пользователя"""
+    try:
+        activity_log = ActivityLog(
+            habit_id=habit_id,
+            action=action,
+            details=details,
+            ip_address=request.remote_addr if request else None,
+            user_agent=request.user_agent.string if request else None
+        )
+        db.session.add(activity_log)
+        db.session.commit()
+        
+        # Также логируем в файл
+        log_message = f"Action: {action}, Habit ID: {habit_id}, Details: {details}"
+        app.logger.info(log_message)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to log activity: {e}")
+        db.session.rollback()
 
 def calculate_streak(habit_id):
     """Рассчитывает текущую серию непрерывного выполнения привычки"""
@@ -43,21 +91,22 @@ def calculate_streak(habit_id):
     if not logs:
         return 0
     
-    # Определяем, с какой даты начинать считать
-    if logs[0].date == today:
-        # Сегодня выполнено - считаем от сегодня
-        start_date = today
-    elif logs[0].date == today - timedelta(days=1):
-        # Вчера выполнено (сегодня нет) - считаем от вчера
-        start_date = today - timedelta(days=1)
+    # Определяем, есть ли сегодня выполнение
+    has_today = logs[0].date == today
+    
+    # Определяем дату, с которой начинать подсчет
+    if has_today:
+        current_date = today
     else:
-        # Последнее выполнение было больше дня назад - нет текущей серии
-        return 0
+        # Если сегодня нет выполнения, проверяем вчера
+        if logs[0].date == today - timedelta(days=1):
+            current_date = today - timedelta(days=1)
+        else:
+            # Последнее выполнение было раньше чем вчера
+            return 0
     
-    # Считаем непрерывные дни
+    # Подсчитываем непрерывные дни
     streak = 0
-    current_date = start_date
-    
     for log in logs:
         if log.date == current_date:
             streak += 1
@@ -142,12 +191,14 @@ def index():
     total_habits = len(habits_raw)
     completed_today = sum(1 for h in habit_data if h['done_today'])
     
+    log_activity('view_index', details=f'Total habits: {total_habits}', request=request)
+    
     # Передаем функции в шаблон
     return render_template('index.html', 
                          habits=habit_data, 
                          today=today,
-                         timedelta=timedelta,  # Добавляем timedelta в контекст
-                         russian_plural_days=russian_plural_days,  # Функция для склонения
+                         timedelta=timedelta,
+                         russian_plural_days=russian_plural_days,
                          total_habits=total_habits,
                          completed_today=completed_today)
 
@@ -158,38 +209,70 @@ def add_habit():
         new_habit = Habit(name=name.strip())
         db.session.add(new_habit)
         db.session.commit()
+        
+        # Логируем создание привычки
+        log_activity('create_habit', habit_id=new_habit.id, 
+                    details=f'Name: {name}', request=request)
+        
+        app.logger.info(f"Habit created: {name} (ID: {new_habit.id})")
+    else:
+        log_activity('create_habit_failed', details='Empty name provided', request=request)
+        app.logger.warning("Attempt to create habit with empty name")
+    
     return redirect(url_for('index'))
 
 @app.route('/toggle/<int:habit_id>')
 def toggle_today(habit_id):
+    habit = db.session.get(Habit, habit_id)
+    if not habit:
+        log_activity('toggle_failed', habit_id=habit_id, 
+                    details='Habit not found', request=request)
+        abort(404)
+    
     today = date.today()
     log = HabitLog.query.filter_by(habit_id=habit_id, date=today).first()
+    
+    old_status = log.status if log else False
+    new_status = not old_status if log else True
+    
     if log:
-        log.status = not log.status
+        log.status = new_status
     else:
-        db.session.add(HabitLog(habit_id=habit_id, date=today, status=True))
+        log = HabitLog(habit_id=habit_id, date=today, status=True)
+        db.session.add(log)
+    
     db.session.commit()
+    
+    # Логируем переключение
+    log_activity('toggle_habit', habit_id=habit_id, 
+                details=f'Date: {today}, Status: {old_status} -> {new_status}', 
+                request=request)
+    
+    app.logger.info(f"Habit {habit_id} toggled: {old_status} -> {new_status}")
+    
     return redirect(url_for('index'))
 
 @app.route('/history/<int:habit_id>')
 @app.route('/history/<int:habit_id>/<string:view>')
 def history(habit_id, view='2weeks'):
-    habit = Habit.query.get_or_404(habit_id)
+    habit = db.session.get(Habit, habit_id)
+    if not habit:
+        abort(404)
+    
+    log_activity('view_history', habit_id=habit_id, 
+                details=f'View: {view}', request=request)
     
     current_streak = calculate_streak(habit_id)
     
     if view == '2weeks':
-        # История за 2 недели (14 дней)
         days_count = 14
         days = [date.today() - timedelta(days=i) for i in range(days_count - 1, -1, -1)]
         chart_title = "За последние 2 недели"
-    else:  # 8weeks
-        # Статистика по неделям за 8 недель
+    else:
         weekly_data = get_weekly_stats(habit_id, 8)
         days = []
         chart_title = "Статистика по неделям (8 недель)"
     
-    # Данные для редактируемой истории (всегда за 14 дней)
     editable_days = [date.today() - timedelta(days=i) for i in range(13, -1, -1)]
     editable_history = []
     
@@ -203,7 +286,6 @@ def history(habit_id, view='2weeks'):
             'day_name': d.strftime('%A')
         })
     
-    # Данные для графика
     if view == '2weeks':
         labels = [d.strftime('%d.%m') for d in days]
         values = []
@@ -215,7 +297,6 @@ def history(habit_id, view='2weeks'):
         labels = list(weekly_data.keys())
         values = list(weekly_data.values())
     
-    # Подсчитываем статистику для отображения
     completed_total = sum(1 for entry in editable_history if entry['status'])
     total_days = len(editable_history)
     percentage = int((completed_total / total_days * 100)) if total_days > 0 else 0
@@ -240,24 +321,50 @@ def history_update(habit_id, log_date):
         target_date = datetime.strptime(log_date, '%Y-%m-%d').date()
         log = HabitLog.query.filter_by(habit_id=habit_id, date=target_date).first()
         
-        status = 'status' in request.form
+        old_status = log.status if log else False
+        new_status = 'status' in request.form
         
         if log:
-            log.status = status
+            log.status = new_status
         else:
-            db.session.add(HabitLog(habit_id=habit_id, date=target_date, status=status))
+            log = HabitLog(habit_id=habit_id, date=target_date, status=new_status)
+            db.session.add(log)
         
         db.session.commit()
+        
+        # Логируем обновление истории
+        log_activity('update_history', habit_id=habit_id, 
+                    details=f'Date: {target_date}, Status: {old_status} -> {new_status}', 
+                    request=request)
+        
+        app.logger.info(f"History updated: Habit {habit_id}, Date {target_date}: {old_status} -> {new_status}")
+        
     except Exception as e:
-        print(f"Error updating history: {e}")
+        app.logger.error(f"Error updating history: {e}")
+        log_activity('update_history_error', habit_id=habit_id, 
+                    details=f'Error: {str(e)}', request=request)
     
     return redirect(request.referrer or url_for('index'))
 
 @app.route('/delete/<int:habit_id>', methods=['POST'])
 def delete_habit(habit_id):
-    habit = Habit.query.get_or_404(habit_id)
+    habit = db.session.get(Habit, habit_id)
+    if not habit:
+        log_activity('delete_failed', habit_id=habit_id, 
+                    details='Habit not found', request=request)
+        abort(404)
+    
+    habit_name = habit.name
+    
+    # Логируем перед удалением
+    log_activity('delete_habit', habit_id=habit_id, 
+                details=f'Name: {habit_name}', request=request)
+    
     db.session.delete(habit)
     db.session.commit()
+    
+    app.logger.info(f"Habit deleted: {habit_name} (ID: {habit_id})")
+    
     return redirect(url_for('index'))
 
 @app.route('/api/weekly_stats/<int:habit_id>')
@@ -265,12 +372,54 @@ def api_weekly_stats(habit_id):
     """API для получения статистики по неделям"""
     weeks = request.args.get('weeks', 8, type=int)
     weekly_data = get_weekly_stats(habit_id, weeks)
+    
+    log_activity('api_call', habit_id=habit_id, 
+                details=f'weekly_stats, weeks={weeks}', request=request)
+    
     return jsonify(weekly_data)
+
+@app.route('/logs')
+def view_logs():
+    """Страница для просмотра логов"""
+    # Получаем последние 100 записей
+    logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(100).all()
+    
+    # Форматируем для отображения
+    formatted_logs = []
+    for log in logs:
+        formatted_logs.append({
+            'timestamp': log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'habit_id': log.habit_id,
+            'action': log.action,
+            'details': log.details,
+            'ip': log.ip_address
+        })
+    
+    log_activity('view_logs', details=f'Viewed {len(logs)} logs', request=request)
+    
+    return render_template('logs.html', logs=formatted_logs)
+
+@app.route('/logs/clear', methods=['POST'])
+def clear_logs():
+    """Очистка логов (только для админа)"""
+    try:
+        # Удаляем логи старше 30 дней
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+        deleted_count = ActivityLog.query.filter(ActivityLog.timestamp < cutoff_date).delete()
+        db.session.commit()
+        
+        log_activity('clear_logs', details=f'Deleted {deleted_count} old logs', request=request)
+        app.logger.info(f"Cleared {deleted_count} old logs")
+        
+        return jsonify({'success': True, 'deleted': deleted_count})
+    except Exception as e:
+        app.logger.error(f"Error clearing logs: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        print("База данных инициализирована")
-        print(f"URL: http://localhost:5000")
+        app.logger.info("База данных инициализирована")
+        app.logger.info(f"URL: http://localhost:5000")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

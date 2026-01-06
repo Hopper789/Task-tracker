@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Логи приложения</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #39d353;
+            --secondary-color: #238636;
+            --bg-dark: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-light: #f0f6fc;
+            --text-muted: #8b949e;
+        }
+        
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        
+        .logs-container {
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-entry:hover {
+            background-color: rgba(57, 211, 83, 0.05);
+        }
+        
+        .log-timestamp {
+            color: var(--primary-color);
+            font-weight: bold;
+            min-width: 160px;
+        }
+        
+        .log-action {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        
+        .action-create { background-color: rgba(46, 160, 67, 0.2); color: #3fb950; }
+        .action-delete { background-color: rgba(248, 81, 73, 0.2); color: #f85149; }
+        .action-update { background-color: rgba(187, 128, 9, 0.2); color: #e3b341; }
+        .action-toggle { background-color: rgba(56, 139, 253, 0.2); color: #58a6ff; }
+        .action-view { background-color: rgba(138, 180, 248, 0.2); color: #79c0ff; }
+        .action-api { background-color: rgba(163, 113, 247, 0.2); color: #bc8cff; }
+        
+        .log-details {
+            color: var(--text-muted);
+            flex-grow: 1;
+            word-break: break-word;
+        }
+        
+        .log-ip {
+            color: #8b949e;
+            font-size: 0.8rem;
+            min-width: 120px;
+            text-align: right;
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-light);
+            padding: 10px 20px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateX(-5px);
+        }
+        
+        .header-card {
+            background: linear-gradient(145deg, var(--card-bg), #1c2128);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-badge {
+            background: linear-gradient(135deg, #1f6feb, #2b7deb);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-clear {
+            background: linear-gradient(135deg, #da3633, #f85149);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        
+        .btn-clear:hover {
+            background: linear-gradient(135deg, #f85149, #ff7b72);
+            color: white;
+        }
+        
+        .empty-logs {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-logs i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <!-- Кнопка назад -->
+    <a href="/" class="back-btn">
+        <i class="bi bi-arrow-left"></i> Назад к привычкам
+    </a>
+    
+    <!-- Заголовок -->
+    <div class="header-card">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="mb-2"><i class="bi bi-journal-text"></i> Логи приложения</h1>
+                <p class="text-muted mb-0">Последние действия пользователей и системные события</p>
+            </div>
+            <div class="d-flex gap-2">
+                <div class="stats-badge">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Последние {{ logs|length }} записей</span>
+                </div>
+                <button onclick="clearOldLogs()" class="btn btn-clear">
+                    <i class="bi bi-trash"></i> Очистить старые
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список логов -->
+    <div class="logs-container">
+        {% if logs %}
+            {% for log in logs %}
+            <div class="log-entry d-flex align-items-center flex-wrap">
+                <span class="log-timestamp">{{ log.timestamp }}</span>
+                
+                {% if 'create' in log.action %}
+                <span class="log-action action-create">{{ log.action }}</span>
+                {% elif 'delete' in log.action %}
+                <span class="log-action action-delete">{{ log.action }}</span>
+                {% elif 'update' in log.action %}
+                <span class="log-action action-update">{{ log.action }}</span>
+                {% elif 'toggle' in log.action %}
+                <span class="log-action action-toggle">{{ log.action }}</span>
+                {% elif 'api' in log.action %}
+                <span class="log-action action-api">{{ log.action }}</span>
+                {% else %}
+                <span class="log-action action-view">{{ log.action }}</span>
+                {% endif %}
+                
+                <span class="log-details">
+                    {% if log.habit_id %}
+                    Привычка #{{ log.habit_id }}: {{ log.details }}
+                    {% else %}
+                    {{ log.details }}
+                    {% endif %}
+                </span>
+                
+                {% if log.ip %}
+                <span class="log-ip">
+                    <i class="bi bi-pc-display"></i> {{ log.ip }}
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-logs">
+                <i class="bi bi-journal-x"></i>
+                <h4>Логи отсутствуют</h4>
+                <p class="text-muted">Здесь будут отображаться действия пользователей</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function clearOldLogs() {
+    if (confirm('Удалить логи старше 30 дней?')) {
+        fetch('/logs/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Удалено ${data.deleted} старых записей`);
+                location.reload();
+            } else {
+                alert('Ошибка при очистке логов: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Ошибка при очистке логов');
+            console.error(error);
+        });
+    }
+}
+
+// Автообновление логов каждые 30 секунд
+setTimeout(() => {
+    location.reload();
+}, 30000);
+</script>
+</body>
+</html>
