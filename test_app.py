@@ -1,25 +1,17 @@
+# test_app.py
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
 import json
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from app import app as flask_app, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
+# Используем патченную версию
+from config import app as flask_app, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days, log_activity
 
 @pytest.fixture
 def app():
     """Создает тестовое приложение с тестовой БД"""
-    # Клонируем конфигурацию для тестов
-    flask_app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-        'SECRET_KEY': 'test-secret-key',
-        'WTF_CSRF_ENABLED': False
-    })
-    
+    # Уже настроено в test_config.py
     with flask_app.app_context():
         db.create_all()
         yield flask_app
