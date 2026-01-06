@@ -5,9 +5,9 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import pytest
 
-# Импорты через conftest
+# Импорты будут через conftest
 import conftest
-from conftest import app, client, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days, log_activity
+from conftest import app, client, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
 
 @pytest.fixture
 def app():

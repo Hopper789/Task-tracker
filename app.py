@@ -8,13 +8,25 @@ from sqlalchemy import func
 import logging
 from logging.handlers import RotatingFileHandler
 
-from config import config
-
 app = Flask(__name__)
 
-# Определяем окружение
-env = os.environ.get('FLASK_ENV', 'default')
-app.config.from_object(config[env])
+# Простая конфигурация вместо импорта из config.py
+if os.environ.get('FLASK_ENV') == 'testing':
+    # Для тестов используем SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    print("✅ Используем SQLite для тестов")
+else:
+    # Для разработки/продакшена используем PostgreSQL
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://habit_user:sudo@localhost:5432/habit_tracker'
+    print("✅ Используем PostgreSQL")
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'dev-secret-key-123'
+
+# Если в тестовом режиме, добавляем дополнительные настройки
+if os.environ.get('FLASK_ENV') == 'testing':
+    app.config['TESTING'] = True
+    app.config['WTF_CSRF_ENABLED'] = False
 
 db = SQLAlchemy(app)
 
