@@ -5,8 +5,9 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import pytest
 
-# Используем патченную версию
-from config import app as flask_app, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days, log_activity
+# Импорты через conftest
+import conftest
+from conftest import app, client, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days, log_activity
 
 @pytest.fixture
 def app():
