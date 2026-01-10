@@ -13,7 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Конфигурация из переменных окружения
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://habit_user:sudo@localhost:543/habit_tracker')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://habit_user:sudo@localhost:5432/habit_tracker')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-123')
 

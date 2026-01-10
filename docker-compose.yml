@@ -1,56 +1,16 @@
-# version: "0.1"
-
-# services:
-#   server:
-#     build:
-#       context: .
-#       dockerfile: Dockerfile.server
-#     container_name: server
-#     ports:
-#     - "5000:5000"
-
-
-version: '0.1'
-
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: habit_tracker_db
-    environment:
-      POSTGRES_USER: habit_user
-      POSTGRES_PASSWORD: sudo
-      POSTGRES_DB: habit_tracker
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "543:5432"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U habit_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
+    network_mode: "host"
     container_name: habit_tracker_app
     environment:
-      DATABASE_URL: postgresql://habit_user:sudo@postgres:5432/habit_tracker
-      SECRET_KEY: your-secret-key
-      FLASK_DEBUG: "False"
+      # Самый простой способ для Linux
+      DATABASE_URL: postgresql://habit_user:sudo@localhost:5432/habit_tracker
+      SECRET_KEY: dev-secret-key-123
+      FLASK_DEBUG: "True"
       FLASK_PORT: 5000
     ports:
       - "5000:5000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
-      - ./templates:/app/templates
-    restart: unless-stopped
-    command: ["sh", "entrypoint.sh"]
-
-volumes:
-  postgres_data:
+    # Не монтируем volumes вообще
+    restart: on-failure
+    command: ["sh", "-c", "chmod 644 /app/*.py && python app.py"]
