@@ -18,11 +18,12 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 pytest==7.4.3 psycopg2
+        pip install -r requirements.txt
     
     - name: Clean up old config files
       run: |
