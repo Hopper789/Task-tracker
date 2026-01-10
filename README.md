@@ -4,3 +4,4 @@
 ```
 python -m pytest test_app.py -v
 ```
+## Сборка образа
