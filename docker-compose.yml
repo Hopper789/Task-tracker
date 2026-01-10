@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    network_mode: "host"
+    container_name: habit_tracker_app
+    environment:
+      # Самый простой способ для Linux
+      DATABASE_URL: postgresql://habit_user:sudo@localhost:5432/habit_tracker
+      SECRET_KEY: dev-secret-key-123
+      FLASK_DEBUG: "True"
+      FLASK_PORT: 5000
+    ports:
+      - "5000:5000"
+    # Не монтируем volumes вообще
+    restart: on-failure
+    command: ["sh", "-c", "chmod 644 /app/*.py && python app.py"]

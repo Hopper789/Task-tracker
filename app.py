@@ -3,10 +3,12 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date, timedelta, timezone
-from collections import defaultdict
-from sqlalchemy import func
 import logging
 from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -17,11 +19,11 @@ if os.environ.get('FLASK_ENV') == 'testing':
     print("✅ Используем SQLite для тестов")
 else:
     # Для разработки/продакшена используем PostgreSQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://habit_user:sudo@localhost:5432/habit_tracker'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://habit_user:sudo@localhost:5432/habit_tracker')
     print("✅ Используем PostgreSQL")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dev-secret-key-123'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-123')
 
 # Если в тестовом режиме, добавляем дополнительные настройки
 if os.environ.get('FLASK_ENV') == 'testing':
@@ -43,7 +45,7 @@ app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO)
 app.logger.info('Habit Tracker startup')
 
-# Модели базы данных
+# Модели базы данных (остаются без изменений)
 class Habit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -429,10 +431,15 @@ def clear_logs():
         app.logger.error(f"Error clearing logs: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-if __name__ == '__main__':
+def init_db():
+    """Инициализация базы данных"""
     with app.app_context():
         db.create_all()
-        app.logger.info("База данных инициализирована")
-        app.logger.info(f"URL: http://localhost:5000")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        app.logger.info("Database tables created")
+
+if __name__ == '__main__':
+    init_db()
+    app.logger.info(f"URL: http://localhost:5000")
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', 
+            host='0.0.0.0', 
+            port=int(os.getenv('FLASK_PORT', 5000)))

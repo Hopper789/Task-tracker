@@ -4,3 +4,9 @@
 ```
 python -m pytest test_app.py -v
 ```
+## Сборка и запуск образа
+```
+docker compose up --build
+```
+
+
