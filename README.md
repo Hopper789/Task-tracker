@@ -9,4 +9,7 @@ python -m pytest test_app.py -v
 docker compose up --build
 ```
 
-
+## DB
+```
+psql -U habit_user -d habit_tracker -h localhost -p 228
+```
