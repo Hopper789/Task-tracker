@@ -1,12 +1,11 @@
 # test_app.py
-import os
-import sys
 from datetime import date, datetime, timedelta, timezone
 import json
 import pytest
 
 # Импорты будут через conftest
-from conftest import app, client, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
+from conftest import db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
+from app import app as flask_app
 
 @pytest.fixture
 def app():
