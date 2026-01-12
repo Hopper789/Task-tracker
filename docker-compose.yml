@@ -35,7 +35,7 @@ services:
     container_name: habit_tracker_app
     environment:
       # Самый простой способ для Linux
-      DATABASE_URL: postgresql://habit_user:sudo@habit_tracker_db:5432/habit_tracker
+      DATABASE_URL: postgresql://habit_user:sudo@postgres:5432/habit_tracker
       SECRET_KEY: dev-secret-key-123
       FLASK_DEBUG: "True"
       FLASK_PORT: 5000

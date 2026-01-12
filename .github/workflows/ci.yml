@@ -69,8 +69,6 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:${{ v1 }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
