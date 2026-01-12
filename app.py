@@ -41,7 +41,16 @@ file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
 ))
 file_handler.setLevel(logging.INFO)
+
+# Добавьте StreamHandler для вывода в консоль
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s'
+))
+stream_handler.setLevel(logging.INFO)
+
 app.logger.addHandler(file_handler)
+app.logger.addHandler(stream_handler)
 app.logger.setLevel(logging.INFO)
 app.logger.info('Habit Tracker startup')
 
@@ -89,7 +98,7 @@ def log_activity(action, habit_id=None, details=None, request=None):
         # Также логируем в файл
         log_message = f"Action: {action}, Habit ID: {habit_id}, Details: {details}"
         app.logger.info(log_message)
-        
+    
     except Exception as e:
         app.logger.error(f"Failed to log activity: {e}")
         db.session.rollback()
