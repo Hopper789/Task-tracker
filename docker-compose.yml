@@ -2,20 +2,14 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: habit_tracker_db
-    restart: unless-stopped  # Автоперезапуск при падении
-    
+    restart: unless-stopped
+    env_file: .env
     environment:
-      # Переменные для инициализации БД
-      POSTGRES_USER: habit_user      # Логин для подключения
-      POSTGRES_PASSWORD: sudo        # Пароль (поменяй на свой)
-      POSTGRES_DB: habit_tracker     # Имя базы данных
-      
-      # Оптимизации для Alpine
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
-      LANG: C.UTF-8
-    
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
     volumes:
-      # 1. Docker Volume для хранения данных БД
       - postgres_data:/var/lib/postgresql/data
     
     ports:
@@ -24,7 +18,7 @@ services:
       - app-network
     healthcheck:
       # Проверка что БД готова принимать подключения
-      test: ["CMD-SHELL", "pg_isready -U habit_user -d habit_tracker"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s     # Проверять каждые 10 сек
       timeout: 5s       # Ждать ответа 5 сек
       retries: 5        # 5 попыток
@@ -33,26 +27,26 @@ services:
   app:
     build: .
     container_name: habit_tracker_app
+    env_file: .env
     environment:
-      # Самый простой способ для Linux
-      DATABASE_URL: postgresql://habit_user:sudo@postgres:5432/habit_tracker
-      SECRET_KEY: dev-secret-key-123
-      FLASK_DEBUG: "True"
-      FLASK_PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      FLASK_DEBUG: ${FLASK_DEBUG}
+      FLASK_PORT: ${FLASK_PORT}
+    volumes:
+      - habit_tracker_logs:/app/logs
+
     ports:
-      - "5000:5000"
+      - "5000:${FLASK_PORT}"
     networks:
       - app-network
     restart: on-failure
-    command: ["sh", "-c", "chmod 644 /app/*.py && python app.py"]
+    command: ["sh", "python app.py"]
 
-# Объявляем Volume, который будет создан Docker
 volumes:
-  logs:
+  habit_tracker_logs:
   postgres_data:
-    # Docker автоматически создаст volume с этим именем
-    # Физически он будет в /var/lib/docker/volumes/
 
 networks:
     app-network:
-      driver: bridge  # Тип сети (по умолчанию)
+      driver: bridge
