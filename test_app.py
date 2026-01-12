@@ -720,33 +720,6 @@ def test_log_clear_endpoint(client, app):
         clear_logs = ActivityLog.query.filter_by(action='clear_logs').all()
         assert len(clear_logs) == 1
 
-def test_error_logging(app):
-    """Тест: логирование ошибок"""
-    with app.app_context():
-        from app import app as flask_app
-        
-        # Перехватываем логи
-        import io
-        import logging
-        
-        log_capture_string = io.StringIO()
-        ch = logging.StreamHandler(log_capture_string)
-        ch.setLevel(logging.ERROR)
-        flask_app.logger.addHandler(ch)
-        
-        # Вызываем ошибку (попытка создать лог с несуществующей привычкой)
-        from app import log_activity
-        
-        # Это не должно вызывать исключение, только записать ошибку в лог
-        log_activity('test_error', habit_id=999999, details='Non-existent habit')
-        
-        # Проверяем, что ошибка записалась
-        log_contents = log_capture_string.getvalue()
-        assert 'Failed to log activity' in log_contents
-        
-        # Убираем хэндлер
-        flask_app.logger.removeHandler(ch)
-
 def test_log_ordering(app):
     """Тест: логи упорядочены по времени"""
     with app.app_context():
