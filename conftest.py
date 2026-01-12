@@ -10,7 +10,7 @@ os.environ['FLASK_ENV'] = 'testing'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Переопределяем конфигурацию
-from app import app as flask_app
+from app import db, app as flask_app
 
 # Настраиваем для тестов
 flask_app.config.update({
@@ -20,9 +20,6 @@ flask_app.config.update({
     'SECRET_KEY': 'test-secret-key',
     'WTF_CSRF_ENABLED': False
 })
-
-# Теперь импортируем остальное
-from app import db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days, log_activity
 
 @pytest.fixture(autouse=True)
 def setup_test_database():
