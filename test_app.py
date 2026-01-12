@@ -6,7 +6,7 @@ import json
 import pytest
 
 # Импорты будут через conftest
-from conftest import db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
+from conftest import app, client, db, Habit, HabitLog, ActivityLog, calculate_streak, get_weekly_stats, russian_plural_days
 
 @pytest.fixture
 def app():
