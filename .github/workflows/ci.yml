@@ -13,12 +13,10 @@ jobs:
     services:
       postgres:
         image: postgres:15-alpine
-        env_file: ../../.env
-        environment:
-          POSTGRES_USER: ${POSTGRES_USER}
-          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-          POSTGRES_DB: ${POSTGRES_DB}
-
+        env:
+          POSTGRES_USER: habit_user
+          POSTGRES_PASSWORD: sudo
+          POSTGRES_DB: habit_tracker
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -72,5 +70,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:v1
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
