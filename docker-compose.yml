@@ -1,16 +1,58 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: habit_tracker_db
+    restart: unless-stopped  # Автоперезапуск при падении
+    
+    environment:
+      # Переменные для инициализации БД
+      POSTGRES_USER: habit_user      # Логин для подключения
+      POSTGRES_PASSWORD: sudo        # Пароль (поменяй на свой)
+      POSTGRES_DB: habit_tracker     # Имя базы данных
+      
+      # Оптимизации для Alpine
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      LANG: C.UTF-8
+    
+    volumes:
+      # 1. Docker Volume для хранения данных БД
+      - postgres_data:/var/lib/postgresql/data
+    
+    ports:
+      - "228:5432"
+    networks:
+      - app-network
+    healthcheck:
+      # Проверка что БД готова принимать подключения
+      test: ["CMD-SHELL", "pg_isready -U habit_user -d habit_tracker"]
+      interval: 10s     # Проверять каждые 10 сек
+      timeout: 5s       # Ждать ответа 5 сек
+      retries: 5        # 5 попыток
+      start_period: 30s # Дать 30 сек на старт
+
   app:
     build: .
-    network_mode: "host"
     container_name: habit_tracker_app
     environment:
       # Самый простой способ для Linux
-      DATABASE_URL: postgresql://habit_user:sudo@localhost:5432/habit_tracker
+      DATABASE_URL: postgresql://habit_user:sudo@habit_tracker_db:5432/habit_tracker
       SECRET_KEY: dev-secret-key-123
       FLASK_DEBUG: "True"
       FLASK_PORT: 5000
     ports:
       - "5000:5000"
-    # Не монтируем volumes вообще
+    networks:
+      - app-network
     restart: on-failure
     command: ["sh", "-c", "chmod 644 /app/*.py && python app.py"]
+
+# Объявляем Volume, который будет создан Docker
+volumes:
+  logs:
+  postgres_data:
+    # Docker автоматически создаст volume с этим именем
+    # Физически он будет в /var/lib/docker/volumes/
+
+networks:
+    app-network:
+      driver: bridge  # Тип сети (по умолчанию)

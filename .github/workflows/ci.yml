@@ -2,7 +2,7 @@ name: Python CI
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, dev ]
   pull_request:
     branches: [ master ]
 
@@ -10,6 +10,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: habit_user
+          POSTGRES_PASSWORD: sudo
+          POSTGRES_DB: habit_tracker
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
