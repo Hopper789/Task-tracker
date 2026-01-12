@@ -71,6 +71,6 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:${{ v1 }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/task-tracker:v1
           cache-from: type=gha
           cache-to: type=gha,mode=max
