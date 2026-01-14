@@ -447,6 +447,8 @@ def init_db():
         app.logger.info("Database tables created")
 
 if __name__ == '__main__':
+    import time
+    time.sleep(10)
     init_db()
     app.logger.info(f"URL: http://localhost:5000")
     app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', 

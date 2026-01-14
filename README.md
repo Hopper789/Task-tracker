@@ -9,7 +9,14 @@ python -m pytest test_app.py -v
 docker compose up --build
 ```
 
-## DB
+## Проверка бд
 ```
 psql -U habit_user -d habit_tracker -h localhost -p 228
+```
+
+## Хочу вставить одну команду
+```
+git clone https://github.com/Hopper789/Task-tracker.git 
+cd Task-tracker
+docker compose up --build
 ```
