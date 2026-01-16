@@ -1,0 +1,65 @@
+# Часть 1: Наше приложение
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: habit-tracker-app
+  namespace: habit-tracker
+spec:
+  replicas: 1  # Один экземпляр приложения
+  selector:
+    matchLabels:
+      app: habit-tracker-app
+  template:
+    metadata:
+      labels:
+        app: habit-tracker-app
+    spec:
+      containers:
+      - name: habit-tracker-app
+        image: habit-tracker-app:latest  # Наш образ
+        imagePullPolicy: IfNotPresent    # Берем локальный образ
+        env:
+        # Ссылка на базу данных
+        - name: DATABASE_URL
+          value: "postgresql://habit_user:sudo@postgres-service.habit-tracker.svc.cluster.local:5432/habit_tracker"
+        - name: SECRET_KEY
+          value: "key"
+        - name: FLASK_DEBUG
+          value: "true"
+        ports:
+        - containerPort: 5000
+        # Ждем пока база данных запустится
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Ждем PostgreSQL..."
+            sleep 20
+            echo "Запускаем Flask..."
+            python app.py
+---
+# Часть 2: Сетевой доступ к приложению ВНУТРИ кластера
+apiVersion: v1
+kind: Service
+metadata:
+  name: habit-tracker-service
+  namespace: habit-tracker
+spec:
+  selector:
+    app: habit-tracker-app
+  ports:
+  - port: 80         # Внутренний порт сервиса
+    targetPort: 5000 # Порт контейнера
+---
+# Часть 3: Доступ СНАРУЖИ кластера
+apiVersion: v1
+kind: Service
+metadata:
+  name: habit-tracker-external
+  namespace: habit-tracker
+spec:
+  selector:
+    app: habit-tracker-app
+  ports:
+  - port: 30080      # Порт на ноде (30000-32767)
+    targetPort: 5000 # Порт контейнера
+  type: NodePort     # Делаем доступным снаружи

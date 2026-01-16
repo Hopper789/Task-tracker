@@ -1,0 +1,62 @@
+# Часть 1: Постоянное хранилище для данных
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: habit-tracker  # Кладем в нашу "папку"
+spec:
+  accessModes:
+    - ReadWriteOnce  # Монтируем только на одну ноду
+  resources:
+    requests:
+      storage: 1Gi   # 1 Гигабайт места
+---
+# Часть 2: Сам PostgreSQL контейнер
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: habit-tracker
+spec:
+  replicas: 1  # Один экземпляр базы
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine  # Маленький образ
+        env:
+        # Параметры для PostgreSQL
+        - name: POSTGRES_DB
+          value: "habit_tracker"
+        - name: POSTGRES_USER
+          value: "habit_user"
+        - name: POSTGRES_PASSWORD
+          value: "sudo"  # Простой пароль для теста
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data  # Куда класть данные
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc  # Используем наше хранилище
+---
+# Часть 3: Сетевой доступ к PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: habit-tracker
+spec:
+  selector:
+    app: postgres  # Находим наш контейнер с БД
+  ports:
+  - port: 5432     # Внутренний порт в Kubernetes
+    targetPort: 5432  # Порт в контейнере

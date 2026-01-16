@@ -1,0 +1,18 @@
+# k8s/4-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: habit-tracker-config
+  namespace: habit-tracker
+data:
+  FLASK_DEBUG: "false"
+  FLASK_PORT: "5000"
+  FLASK_ENV: "production"
+  
+  DB_NAME: "habit_tracker"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  
+  APP_NAME: "Habit Tracker"
+  TIMEZONE: "UTC"
+  LOG_LEVEL: "INFO"
