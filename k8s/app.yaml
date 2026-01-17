@@ -32,6 +32,11 @@ spec:
         env:
         - name: DATABASE_URL
           value: "postgresql://habit_user:sudo@postgres-service.habit-tracker.svc.cluster.local:5432/habit_tracker"
+        - name: PGPASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: DB_PASS
         - name: SECRET_KEY
           valueFrom:
             configMapKeyRef:
