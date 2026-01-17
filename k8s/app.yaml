@@ -1,0 +1,100 @@
+# App
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: habit-tracker-app
+  namespace: habit-tracker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: habit-tracker-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: habit-tracker-app
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command: ['sh', '-c', 
+          'until pg_isready -h postgres-service -p 5432 -U habit_user -d habit_tracker; do 
+            sleep 5;
+           done;
+           echo "PostgreSQL готов!"']
+      containers:
+      - name: habit-tracker-app
+        image: habit-tracker-app:latest
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://habit_user:sudo@postgres-service.habit-tracker.svc.cluster.local:5432/habit_tracker"
+        - name: SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: FLASK_KEY
+        - name: FLASK_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: FLASK_PORT
+        - name: FLASK_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: FLASK_DEBUG
+        ports:
+        - containerPort: 5000
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30  # Даем 30 сек на запуск
+          periodSeconds: 10        # Проверяем реже
+          timeoutSeconds: 5        # Ждем 5 сек ответа
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30  # Даем время на запуск
+          periodSeconds: 10        # Проверяем каждые 10 сек
+          failureThreshold: 3      # 3 неудачи = перезапустить
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Запускаем Flask..."
+            python app.py
+---
+# Internal network
+apiVersion: v1
+kind: Service
+metadata:
+  name: habit-tracker-service
+  namespace: habit-tracker
+spec:
+  selector:
+    app: habit-tracker-app
+  ports:
+  - port: 80
+    targetPort: 5000
+---
+# External network
+apiVersion: v1
+kind: Service
+metadata:
+  name: habit-tracker-external
+  namespace: habit-tracker
+spec:
+  selector:
+    app: habit-tracker-app
+  ports:
+  - port: 32000
+    targetPort: 5000
+  type: NodePort

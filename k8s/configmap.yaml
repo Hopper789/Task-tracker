@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: habit-tracker-config
+  namespace: habit-tracker
+data:
+  FLASK_DEBUG: "false"
+  FLASK_PORT: "5000"
+  FLASK_ENV: "production"
+  FLASK_KEY: "key"
+  
+  DB_NAME: "habit_tracker"
+  DB_USER: "habit_user"
+  DB_PASS: "sudo"
