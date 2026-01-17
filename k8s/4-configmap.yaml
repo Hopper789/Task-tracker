@@ -1,4 +1,3 @@
-# k8s/4-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,6 +12,6 @@ data:
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
   
-  APP_NAME: "Habit Tracker"
+  APP_NAME: "Habit racker"
   TIMEZONE: "UTC"
   LOG_LEVEL: "INFO"

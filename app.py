@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta, timezone
 import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
+from flask import jsonify
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -440,6 +441,27 @@ def clear_logs():
         app.logger.error(f"Error clearing logs: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint для Kubernetes"""
+    try:
+        db.session.execute('SELECT 1')
+        
+        return jsonify({
+            'status': 'healthy',
+            'service': 'habit-tracker',
+            'database': 'connected',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Health check failed: {e}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+    
 def init_db():
     """Инициализация базы данных"""
     with app.app_context():
