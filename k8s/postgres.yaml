@@ -1,24 +1,24 @@
-# Часть 1: Постоянное хранилище для данных
+# PVC
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: habit-tracker  # Кладем в нашу "папку"
+  namespace: habit-tracker
 spec:
   accessModes:
     - ReadWriteOnce  # Монтируем только на одну ноду
   resources:
     requests:
-      storage: 1Gi   # 1 Гигабайт места
+      storage: 1Gi
 ---
-# Часть 2: Сам PostgreSQL контейнер
+# Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
   namespace: habit-tracker
 spec:
-  replicas: 1  # Один экземпляр базы
+  replicas: 1
   selector:
     matchLabels:
       app: postgres
@@ -29,26 +29,34 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine  # Маленький образ
+        image: postgres:15-alpine
         env:
-        # Параметры для PostgreSQL
         - name: POSTGRES_DB
-          value: "habit_tracker"
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: DB_NAME
         - name: POSTGRES_USER
-          value: "habit_user"
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: DB_USER
         - name: POSTGRES_PASSWORD
-          value: "sudo"  # Простой пароль для теста
+          valueFrom:
+            configMapKeyRef:
+              name: habit-tracker-config
+              key: DB_PASS
         ports:
         - containerPort: 5432
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/data  # Куда класть данные
+          mountPath: /var/lib/postgresql/data 
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
-          claimName: postgres-pvc  # Используем наше хранилище
+          claimName: postgres-pvc
 ---
-# Часть 3: Сетевой доступ к PostgreSQL
+# Network
 apiVersion: v1
 kind: Service
 metadata:
@@ -56,7 +64,7 @@ metadata:
   namespace: habit-tracker
 spec:
   selector:
-    app: postgres  # Находим наш контейнер с БД
+    app: postgres
   ports:
   - port: 5432     # Внутренний порт в Kubernetes
     targetPort: 5432  # Порт в контейнере

@@ -7,11 +7,8 @@ data:
   FLASK_DEBUG: "false"
   FLASK_PORT: "5000"
   FLASK_ENV: "production"
+  FLASK_KEY: "key"
   
   DB_NAME: "habit_tracker"
-  DB_HOST: "postgres-service"
-  DB_PORT: "5432"
-  
-  APP_NAME: "Habit racker"
-  TIMEZONE: "UTC"
-  LOG_LEVEL: "INFO"
+  DB_USER: "habit_user"
+  DB_PASS: "sudo"

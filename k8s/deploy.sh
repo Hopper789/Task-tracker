@@ -5,12 +5,11 @@ docker build -t habit-tracker-app:latest .
 minikube image load habit-tracker-app:latest
 
 # Apply yaml
-kubectl apply -f k8s/1-namespace.yaml
-kubectl apply -f k8s/4-configmap.yaml
-kubectl apply -f k8s/2-postgres.yaml
-sleep 30
-kubectl apply -f k8s/3-app.yaml
-sleep 30
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/postgres.yaml
+kubectl apply -f k8s/app.yaml
+sleep 60
 
 # Launch web
 minikube service habit-tracker-external -n habit-tracker
