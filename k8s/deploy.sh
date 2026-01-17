@@ -1,31 +1,18 @@
-#!/bin/bash
+minikube start --nodes 3 --memory=4096 --cpus=2
 
-echo "🚀 1. Запускаем Minikube..."
-minikube start --driver=docker
-
-echo "📦 2. Собираем Docker образ..."
+# Docker
 docker build -t habit-tracker-app:latest .
 minikube image load habit-tracker-app:latest
 
-echo "🛠 3. Применяем конфигурацию Kubernetes..."
+# Apply yaml
 kubectl apply -f k8s/1-namespace.yaml
+kubectl apply -f k8s/4-configmap.yaml
 kubectl apply -f k8s/2-postgres.yaml
-
-echo "⏳ Ждем запуска PostgreSQL..."
+sleep 30
+kubectl apply -f k8s/3-app.yaml
 sleep 30
 
-kubectl apply -f k8s/3-app.yaml
-
-echo "⏳ Ждем запуска приложения..."
-sleep 20
-
-echo "✅ Всё запущено!"
-echo ""
-echo "📊 Проверь статус:"
-kubectl get all -n habit-tracker
-
-echo ""
-echo "🌐 Открой приложение в браузере:"
+# Launch web
 minikube service habit-tracker-external -n habit-tracker
 
 echo ""

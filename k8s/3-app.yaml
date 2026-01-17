@@ -19,6 +19,14 @@ spec:
       labels:
         app: habit-tracker-app
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine  # Используем образ с psql
+        command: ['sh', '-c', 
+          'until pg_isready -h postgres-service -p 5432 -U habit_user -d habit_tracker; do 
+            sleep 5;
+           done;
+           echo "PostgreSQL готов!"']
       containers:
       - name: habit-tracker-app
         image: habit-tracker-app:latest  # Наш образ
